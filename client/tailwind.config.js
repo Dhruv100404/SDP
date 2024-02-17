@@ -1,12 +1,8 @@
-/* tailwind.config.js */
+/** @type {import('tailwindcss').Config} */
 
-module.exports = {
-  // Other Tailwind CSS configuration...
-  purge: [],
-  darkMode: false,
-  theme: {
-    extend: {},
-  },
-  variants: {},
-  plugins: [],
+const plugin = require('tailwindcss/plugin');
+export const content = ["./src/**/*.{html,js}"];
+export const theme = {
+  extend: {},
 };
+export const plugins = ['tailwindcss-animatecss'];

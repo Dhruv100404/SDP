@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import 'tailwindcss/tailwind.css';
 import Cookies from 'js-cookie';
 
 const Main = () => {
@@ -105,8 +104,9 @@ const Main = () => {
     };
 
     return (
-        <div className="main-container bg-gradient-to-b from-gray-300 via-gray-200 to-gray-300 animate-gradient opacity-0 animate-fade-in min-h-screen flex flex-col items-center">
-            <nav className="navbar bg-gray-800 p-4 flex justify-between items-center box-shadow-md">
+        <div className="main-container flex-col items-center p-4 md:p-8 min-h-screen">
+
+            <nav className="navbar fixed top-0 left-0 right-0  bg-gray-800 p-4 flex justify-between items-center box-shadow-md">
                 <div className="user-info flex items-center text-white">
                     <img src={userImage} alt="User" className="user-image w-10 h-10 rounded-full mr-2 border-2 border-white" />
                     <span className="user-name">{userName}</span>
@@ -115,63 +115,61 @@ const Main = () => {
             </nav>
 
             <div className="content-container flex flex-col md:flex-row w-full mt-4 justify-center">
-                <div className="input-container m-4 p-6 bg-white rounded shadow-md hover:shadow-lg transition-shadow w-full md:w-1/2">
-                    <button
-                        className={`button ${inputType === 'PDF' ? 'bg-blue-500' : 'hover:bg-blue-500'} text-white py-2 px-4 rounded transition-bg`}
-                        onClick={() => setInputType('PDF')}
-                    >
-                        PDF
-                    </button>
-                    &nbsp;
-                    <button
-                        className={`button ${inputType === 'TEXT' ? 'bg-blue-500' : 'hover:bg-blue-500'} text-white py-2 px-4 rounded transition-bg`}
-                        onClick={() => setInputType('TEXT')}
-                    >
-                        TEXT
-                    </button>
-                    &nbsp;
-                    <button
-                        className={`button ${inputType === 'ARTICLE' ? 'bg-blue-500' : 'hover:bg-blue-500'} text-white py-2 px-4 rounded transition-bg`}
-                        onClick={() => setInputType('ARTICLE')}
-                    >
-                        ARTICLE
-                    </button>
+                <div className="input-container m-4 p-6 bg-white rounded shadow-md hover:shadow-lg transition-shadow w-full md:w-1/2 ">
+                    <div className="flex flex-wrap space-y-2 md:space-y-0 md:space-x-2 mb-4">
+                        <button
+                            className={`button bg-red-500 hover:bg-blue-500 text-white py-2 px-4 rounded transition-bg`}
+                            onClick={() => setInputType('PDF')}
+                        >
+                            PDF
+                        </button>
+                        <button
+                            className={`button bg-red-500 hover:bg-blue-500 text-white py-2 px-4 rounded transition-bg`}
+                            onClick={() => setInputType('TEXT')}
+                        >
+                            TEXT
+                        </button>
+                        <button
+                            className={`button bg-red-500 hover:bg-blue-500 text-white py-2 px-4 rounded transition-bg`}
+                            onClick={() => setInputType('ARTICLE')}
+                        >
+                            ARTICLE
+                        </button>
+                    </div>
 
                     {inputType === 'ARTICLE' && (
-                        <>
-                            <br />
-                            <br />
-                            <label htmlFor="articleUrl" className="text-lg mb-2 block">Article URL:</label>
+                        <div className="mb-4">
+                            <label htmlFor="articleUrl" className="text-lg block">Article URL:</label>
                             <input
                                 type="text"
                                 id="articleUrl"
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                                className="w-full border rounded p-2 mb-4 focus:border-blue-500 focus:outline-none"
+                                className="w-full border rounded p-2 focus:border-blue-500 focus:outline-none"
                             />
-                        </>
+                        </div>
                     )}
-                    <br />
 
                     {inputType !== 'ARTICLE' && (
-                        <textarea
-                            id="inputText"
-                            value={inputText}
-                            onChange={(e) => setInputText(e.target.value)}
-                            className="w-full h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"
-                        />
+                        <div className="mb-4">
+                            <label htmlFor="inputText" className="text-lg block">Input Text:</label>
+                            <textarea
+                                id="inputText"
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                                className="w-full h-36 md:h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"
+                            />
+                        </div>
                     )}
-                    <br />
-                    <br />
+
                     <button onClick={generateSummary} className="generate-summary-btn bg-green-500 text-white py-2 px-4 rounded mt-4 hover:bg-green-600 transition-bg">
                         Generate Summary
                     </button>
+                </div>
 
-                    <div className="output-container m-4 p-6 bg-white rounded shadow-md hover:shadow-lg transition-shadow w-full md:w-1/2">
-                        <br />
-                        <label htmlFor="outputText" className="text-lg mb-2 block">Output Text:</label>
-                        <textarea id="outputText" value={outputText} className="w-full h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"></textarea>
-                    </div>
+                <div className="output-container m-4 p-6 bg-white rounded shadow-md hover:shadow-lg transition-shadow w-full md:w-1/2 mt-16">
+                    <label htmlFor="outputText" className="text-lg mb-2 block">Output Text:</label>
+                    <textarea id="outputText" value={outputText} className="w-full h-36 md:h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"></textarea>
                 </div>
             </div>
         </div>
