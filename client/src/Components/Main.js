@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { FaCloudUploadAlt } from 'react-icons/fa';  
+import { FaCloudUploadAlt } from 'react-icons/fa';
 
 const Main = () => {
     const [userName, setUserName] = useState('');
@@ -10,22 +10,12 @@ const Main = () => {
     const [inputType, setInputType] = useState('TEXT');
     const [question, setQuestion] = useState('');
     const [file, setFile] = useState(null);
+    const [processingComplete, setProcessingComplete] = useState(false);
 
-    
 
     const handleQuestionChange = (e) => {
         setQuestion(e.target.value);
     };
-
-    const generateAnswer = async () => {
-        let requestBody;
-        requestBody = {
-            inputs: {
-                question: question,
-                context: inputText, // Assuming inputText is the PDF content
-            },
-        };
-    }
 
     const generateSummary = async () => {
         let requestBody;
@@ -77,13 +67,14 @@ const Main = () => {
     const handleFileUpload = async (event) => {
         const selectedFile = event.target.files[0];
         setFile(selectedFile);
-        if (!file) {
+
+        if (!selectedFile) {
             console.error('No file selected');
             return;
         }
 
         const formData = new FormData();
-        formData.append('pdf_files', file);
+        formData.append('pdf_files', selectedFile);
 
         try {
             const response = await fetch('http://localhost:5000/process_pdfs', {
@@ -93,6 +84,8 @@ const Main = () => {
 
             if (response.ok) {
                 console.log('PDF Upload Successful');
+                // Set processingComplete to true after successful processing
+                setProcessingComplete(true);
             } else {
                 console.error('Error uploading PDF:', response.statusText);
             }
@@ -101,8 +94,13 @@ const Main = () => {
         }
     };
 
-
     const askQuestion = async () => {
+        // Check if PDF processing is complete before allowing to ask a question
+        if (!processingComplete) {
+            console.error('PDF processing not complete. Please wait.');
+            return;
+        }
+        console.log('Asking Question')        
         try {
             const response = await fetch('http://localhost:5000/chat', {
                 method: 'POST',
@@ -110,11 +108,13 @@ const Main = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ user_question: question }),
+                
             });
 
             if (response.ok) {
                 const result = await response.json();
                 setOutputText(result.response);
+                console.log(result)
             } else {
                 console.error('Error asking question:', response.statusText);
             }
@@ -122,7 +122,6 @@ const Main = () => {
             console.error('Error asking question:', error);
         }
     };
-
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -219,35 +218,35 @@ const Main = () => {
                         </div>
                     )}
 
-{inputType === 'PDF' && (
-            <div className="mb-4 flex flex-col items-center">
-                <label htmlFor="pdfUpload" className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white py-4 px-8 rounded-full transition-bg flex items-center w-full justify-center">
-                    <FaCloudUploadAlt className="h-6 w-6 mr-2" />
-                    Choose PDF
-                    <input
-                        type="file"
-                        id="pdfUpload"
-                        onChange={handleFileUpload}
-                        accept=".pdf"
-                        className="hidden"
-                    />
-                </label>
-                <span className="mt-2" id="selectedPdfFileName">
-                    {file ? file.name : "No file selected"}
-                </span>
-                <br />
-                <br />
-                <label htmlFor="question" className="text-lg block mb-2">Ask a Question:</label>
-                <input
-                    type="text"
-                    id="question"
-                    value={question}
-                    onChange={handleQuestionChange}
-                    className="w-full border rounded p-2 focus:border-blue-500 focus:outline-none"
-                />
-            </div>
-        )}
-                    
+                    {inputType === 'PDF' && (
+                        <div className="mb-4 flex flex-col items-center">
+                            <label htmlFor="pdfUpload" className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white py-4 px-8 rounded-full transition-bg flex items-center w-full justify-center">
+                                <FaCloudUploadAlt className="h-6 w-6 mr-2" />
+                                Choose PDF
+                                <input
+                                    type="file"
+                                    id="pdfUpload"
+                                    onChange={handleFileUpload}
+                                    accept=".pdf"
+                                    className="hidden"
+                                />
+                            </label>
+                            <span className="mt-2" id="selectedPdfFileName">
+                                {file ? file.name : "No file selected"}
+                            </span>
+                            <br />
+                            <br />
+                            <label htmlFor="question" className="text-lg block mb-2">Ask a Question:</label>
+                            <input
+                                type="text"
+                                id="question"
+                                value={question}
+                                onChange={handleQuestionChange}
+                                className="w-full border rounded p-2 focus:border-blue-500 focus:outline-none"
+                            />
+                        </div>
+                    )}
+
 
                     {inputType !== 'ARTICLE' && inputType !== 'PDF' && (
                         <div className="mb-4">
@@ -261,24 +260,24 @@ const Main = () => {
                         </div>
                     )}
                     {inputType === 'TEXT' && (
-                    <button onClick={generateSummary} className="generate-summary-btn bg-green-500 text-white py-2 px-4 rounded mt-4 hover:bg-green-600 transition-bg">
-                        Generate Summary
-                    </button>
+                        <button onClick={generateSummary} className="generate-summary-btn bg-green-500 text-white py-2 px-4 rounded mt-4 hover:bg-green-600 transition-bg">
+                            Generate Summary
+                        </button>
                     )}
                     {inputType === 'ARTICLE' && (
-                    <button onClick={generateSummary} className="generate-summary-btn bg-green-500 text-white py-2 px-4 rounded mt-4 hover:bg-green-600 transition-bg">
-                        Generate Summary
-                    </button>
+                        <button onClick={generateSummary} className="generate-summary-btn bg-green-500 text-white py-2 px-4 rounded mt-4 hover:bg-green-600 transition-bg">
+                            Generate Summary
+                        </button>
                     )}
-                    {inputType === 'PDF' && 
-                    (<button onClick={askQuestion} className="generate-summary-btn bg-green-500 text-white py-2 px-4 rounded mt-4 hover:bg-green-600 transition-bg">
-                        Ask Question
-                    </button>
+                    {inputType === 'PDF' &&
+                        (<button onClick={askQuestion} className="generate-summary-btn bg-green-500 text-white py-2 px-4 rounded mt-4 hover:bg-green-600 transition-bg">
+                            Ask Question
+                        </button>
 
-                    )}
-                    
-                
-                    </div>
+                        )}
+
+
+                </div>
                 <div className="output-container m-4 p-6 bg-white rounded shadow-md hover:shadow-lg transition-shadow w-full md:w-1/2 mt-16">
                     <label htmlFor="outputText" className="text-lg mb-2 block">Output Text:</label>
                     <textarea id="outputText" value={outputText} className="w-full h-36 md:h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"></textarea>
