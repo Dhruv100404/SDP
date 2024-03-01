@@ -7,7 +7,7 @@ const loginWithGoogle = () => {
 
 const Home = () => {
   return (
-    <>
+    <>  
       <div className="bg-gradient-to-br bg-gradient-animation min-h-screen flex items-center justify-center text-black text-center">
         <div className="container mx-auto p-8">
           <h2 className="animate__animated animate__fadeIn text-3xl md:text-6xl lg:text-6xl font-bold mb-4 md:mb-8">
