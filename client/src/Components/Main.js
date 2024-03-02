@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { FaCloudUploadAlt } from 'react-icons/fa';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Main = () => {
     const [userName, setUserName] = useState('');
@@ -11,6 +13,8 @@ const Main = () => {
     const [question, setQuestion] = useState('');
     const [file, setFile] = useState(null);
     const [processingComplete, setProcessingComplete] = useState(false);
+    const [uploadingPdf, setUploadingPdf] = useState(false);
+    const [questionInProgress, setQuestionInProgress] = useState(false);
 
 
     const handleQuestionChange = (e) => {
@@ -52,7 +56,7 @@ const Main = () => {
                 if (inputType === 'ARTICLE') {
                     summary = result.content
                 } else {
-                    summary = result[0]['summary_text'];
+                    summary = result[0]['summary_text'].replace(/<n>/g, '');
                 }
 
                 setOutputText(summary);
@@ -84,23 +88,27 @@ const Main = () => {
 
             if (response.ok) {
                 console.log('PDF Upload Successful');
-                // Set processingComplete to true after successful processing
                 setProcessingComplete(true);
+                setUploadingPdf(false);
+                toast.success('PDF uploaded successfully!');
             } else {
                 console.error('Error uploading PDF:', response.statusText);
+                toast.error('Error uploading PDF');
             }
         } catch (error) {
             console.error('Error uploading PDF:', error);
+            toast.error('Error uploading PDF');
         }
     };
 
     const askQuestion = async () => {
-        // Check if PDF processing is complete before allowing to ask a question
         if (!processingComplete) {
             console.error('PDF processing not complete. Please wait.');
             return;
         }
-        console.log('Asking Question')        
+
+        setQuestionInProgress(true);
+        console.log('Asking Question')
         try {
             const response = await fetch('http://localhost:5000/chat', {
                 method: 'POST',
@@ -108,18 +116,24 @@ const Main = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ user_question: question }),
-                
+
             });
 
             if (response.ok) {
                 const result = await response.json();
                 setOutputText(result.response);
                 console.log(result)
+                toast.success('Question answered!');
             } else {
                 console.error('Error asking question:', response.statusText);
+                toast.error('Error asking question');
             }
         } catch (error) {
             console.error('Error asking question:', error);
+            toast.error('Error asking question');
+        }
+        finally {
+            setQuestionInProgress(false);
         }
     };
 
@@ -173,7 +187,7 @@ const Main = () => {
 
     return (
         <div className="main-container flex-col items-center p-4 md:p-8 min-h-screen">
-
+            <ToastContainer />
             <nav className="navbar fixed top-0 left-0 right-0  bg-gray-800 p-4 flex justify-between items-center box-shadow-md">
                 <div className="user-info flex items-center text-white">
                     <img src={userImage} alt="User" className="user-image w-10 h-10 rounded-full mr-2 border-2 border-white" />
@@ -244,6 +258,7 @@ const Main = () => {
                                 onChange={handleQuestionChange}
                                 className="w-full border rounded p-2 focus:border-blue-500 focus:outline-none"
                             />
+
                         </div>
                     )}
 
@@ -279,8 +294,18 @@ const Main = () => {
 
                 </div>
                 <div className="output-container m-4 p-6 bg-white rounded shadow-md hover:shadow-lg transition-shadow w-full md:w-1/2 mt-16">
-                    <label htmlFor="outputText" className="text-lg mb-2 block">Output Text:</label>
-                    <textarea id="outputText" value={outputText} className="w-full h-36 md:h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"></textarea>
+                    <label htmlFor="outputText" className="text-lg mb-2 block">
+                        Output Text:
+                    </label>
+                    {questionInProgress ? (
+                        <div className="loader">Loading...</div>
+                    ) : (
+                        <textarea
+                            id="outputText"
+                            value={outputText}
+                            className="w-full h-36 md:h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"
+                        ></textarea>
+                    )}
                 </div>
             </div>
         </div>
