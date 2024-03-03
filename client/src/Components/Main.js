@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { FaCloudUploadAlt } from 'react-icons/fa';
+import { FaCloudUploadAlt,FaFileDownload } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -15,10 +15,23 @@ const Main = () => {
     const [processingComplete, setProcessingComplete] = useState(false);
     const [uploadingPdf, setUploadingPdf] = useState(false);
     const [questionInProgress, setQuestionInProgress] = useState(false);
-
-
+    const [textProcessing, setTextProcessing] = useState(false);
+    
     const handleQuestionChange = (e) => {
         setQuestion(e.target.value);
+    };
+
+    const downloadAsPdf = () => {
+        // Create a new blob with the output text
+        const blob = new Blob([outputText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'output.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     const generateSummary = async () => {
@@ -33,6 +46,7 @@ const Main = () => {
                 'Content-Type': 'application/json',
             };
         } else {
+            setTextProcessing(true);
             apiUrl = 'https://api-inference.huggingface.co/models/google/pegasus-cnn_dailymail';
             requestBody = { inputs: inputText };
             headers = {
@@ -50,6 +64,7 @@ const Main = () => {
 
 
             if (response.ok) {
+
                 const result = await response.json();
                 let summary;
 
@@ -58,13 +73,16 @@ const Main = () => {
                 } else {
                     summary = result[0]['summary_text'].replace(/<n>/g, '');
                 }
-
+                toast.success('Summary Generated')
                 setOutputText(summary);
             } else {
                 console.error('Error generating summary:', response.statusText);
             }
         } catch (error) {
             console.error('Error generating summary:', error);
+        }
+        finally {
+            setTextProcessing(false);
         }
     };
 
@@ -297,14 +315,24 @@ const Main = () => {
                     <label htmlFor="outputText" className="text-lg mb-2 block">
                         Output Text:
                     </label>
-                    {questionInProgress ? (
+                    {questionInProgress || textProcessing ? (
                         <div className="loader">Loading...</div>
                     ) : (
-                        <textarea
-                            id="outputText"
-                            value={outputText}
-                            className="w-full h-36 md:h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"
-                        ></textarea>
+                        <>
+                            <textarea
+                                id="outputText"
+                                value={outputText}
+                                className="w-full h-36 md:h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"
+                            ></textarea>
+                            <div className="flex justify-end mt-4">
+                                <button
+                                    onClick={downloadAsPdf}
+                                    className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center"
+                                >
+                                    <FaFileDownload className="mr-2" /> Download Text File
+                                </button>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
