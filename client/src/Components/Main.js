@@ -1,9 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { FaCloudUploadAlt,FaFileDownload } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaFileDownload } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { ImStatsBars } from "react-icons/im";
 
+const countWords = (text) => {
+    // Split the text into words and filter out empty strings
+    const words = text.split(/\s+/).filter(word => word !== '');
+    return words.length;
+};
+
+const StatisticsModal = ({ inputWordCount, outputWordCount, onClose }) => {
+    return (
+        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-800 bg-opacity-50">
+            <div className="bg-white p-6 rounded shadow-md">
+                <h2 className="text-lg font-bold mb-4">Word Counts</h2>
+                <p className="mb-2">Input Word Count: {inputWordCount}</p>
+                <p className="mb-4">Output Word Count: {outputWordCount}</p>
+                <button onClick={onClose} className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-bg">
+                    Close
+                </button>
+            </div>
+        </div>
+    );
+};
 const Main = () => {
     const [userName, setUserName] = useState('');
     const [userImage, setUserImage] = useState('');
@@ -16,7 +37,9 @@ const Main = () => {
     const [uploadingPdf, setUploadingPdf] = useState(false);
     const [questionInProgress, setQuestionInProgress] = useState(false);
     const [textProcessing, setTextProcessing] = useState(false);
-    
+    const [inputWordCount, setInputWordCount] = useState(0);
+    const [outputWordCount, setOutputWordCount] = useState(0);
+    const [showModal, setShowModal] = useState(false);
     const handleQuestionChange = (e) => {
         setQuestion(e.target.value);
     };
@@ -33,7 +56,9 @@ const Main = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-
+    const toggleModal = () => {
+        setShowModal(!showModal);
+    };
     const generateSummary = async () => {
         let requestBody;
         let apiUrl;
@@ -54,6 +79,9 @@ const Main = () => {
                 'Content-Type': 'application/json',
             };
         }
+        setInputWordCount(countWords(inputText));
+        console.log(inputWordCount);
+
 
         try {
             const response = await fetch(apiUrl, {
@@ -74,6 +102,8 @@ const Main = () => {
                     summary = result[0]['summary_text'].replace(/<n>/g, '');
                 }
                 toast.success('Summary Generated')
+                setOutputWordCount(countWords(summary));
+
                 setOutputText(summary);
             } else {
                 console.error('Error generating summary:', response.statusText);
@@ -326,12 +356,26 @@ const Main = () => {
                             ></textarea>
                             <div className="flex justify-end mt-4">
                                 <button
+                                    onClick={toggleModal}
+                                    className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center"
+                                >
+                                    <ImStatsBars />
+                                </button>
+                                <button
                                     onClick={downloadAsPdf}
                                     className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center"
                                 >
-                                    <FaFileDownload className="mr-2" /> Download Text File
+                                    <FaFileDownload className="md-2" />
                                 </button>
+
                             </div>
+                            {showModal && (
+                                <StatisticsModal
+                                    inputWordCount={inputWordCount}
+                                    outputWordCount={outputWordCount}
+                                    onClose={toggleModal}
+                                />
+                            )}
                         </>
                     )}
                 </div>
