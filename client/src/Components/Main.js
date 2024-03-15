@@ -4,11 +4,16 @@ import { FaCloudUploadAlt, FaFileDownload } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ImStatsBars } from "react-icons/im";
+import { FaExchangeAlt } from 'react-icons/fa';
 
 const countWords = (text) => {
+    
     const words = text.split(/\s+/).filter(word => word !== '');
     return words.length;
 };
+
+
+
 
 const Main = () => {
     const [userName, setUserName] = useState('');
@@ -54,8 +59,10 @@ const Main = () => {
         let apiUrl;
         let headers = {};
 
+
         if (inputType === 'ARTICLE') {
-            apiUrl = 'http://127.0.0.1:5000/scrape';
+            setTextProcessing(true);
+            apiUrl = 'http://127.0.0.1:8080/scrape';
             requestBody = { url: inputText };
             headers = { 'Content-Type': 'application/json' };
         } else {
@@ -67,8 +74,8 @@ const Main = () => {
                 'Content-Type': 'application/json'
             };
         }
-        setInputWordCount(countWords(inputText));
         
+
         try {
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -81,8 +88,49 @@ const Main = () => {
                 let summary;
 
                 if (inputType === 'ARTICLE') {
-                    summary = result.content;
-                } else {
+                    // First, retrieve the content from the URL
+                    const articleContent = result.content;
+                    const ss = articleContent.join(" ");
+                    setInputWordCount(countWords(ss));
+                
+                    // Next, prepare the request body for summarization using PEGASUS
+                    const summarizationRequestBody = { inputs: ss };
+                
+                    // Set the API URL and headers for the PEGASUS model
+                    apiUrl = 'https://api-inference.huggingface.co/models/google/pegasus-large';
+                    headers = {
+                        'Authorization': 'Bearer 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',
+                        'Content-Type': 'application/json'
+                    };
+                
+                    try {
+                        // Fetch the summary using PEGASUS model
+                        const summaryResponse = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(summarizationRequestBody)
+                        });
+                
+                        if (summaryResponse.ok) {
+                            const summaryResult = await summaryResponse.json();
+                            console.log('Summary Result: ', summaryResult);
+                            const summary = summaryResult[0]['summary_text'].replace(/<n>/g, '');
+                
+                            // Update state with the generated summary
+                            setOutputWordCount(countWords(summary));
+                            setOutputText(summary);
+                            
+                        } else {
+                            console.error('Error generating summary:', summaryResponse.statusText);
+                        }
+                    } catch (error) {
+                        console.error('Error generating summary:', error);
+                    }
+                    finally {
+                        setTextProcessing(false);
+                    }
+                }else {
+                    setInputWordCount(countWords(inputText));
                     summary = result[0]['summary_text'].replace(/<n>/g, '');
                 }
                 toast.success('Summary Generated');
@@ -112,7 +160,7 @@ const Main = () => {
         formData.append('pdf_files', selectedFile);
 
         try {
-            const response = await fetch('http://localhost:5000/process_pdfs', {
+            const response = await fetch('http://127.0.0.1:5000/process_pdfs', {
                 method: 'POST',
                 body: formData
             });
@@ -189,13 +237,13 @@ const Main = () => {
         fetchUserData();
     }, []);
 
-    useEffect(() => {
-        setInputCharCount(inputText.length);
-        setOutputCharCount(outputText.length);
-        if (inputCharCount !== 0) {
-            setReductionPercentage(((inputCharCount - outputCharCount) / inputCharCount) * 100);
-        }
-    }, [inputText, outputText, inputCharCount, outputCharCount]);
+    // useEffect(() => {
+    //     setInputCharCount(inputText.length);
+    //     setOutputCharCount(outputText.length);
+    //     if (inputCharCount !== 0) {
+    //         setReductionPercentage(((inputCharCount - outputCharCount) / inputCharCount) * 100);
+    //     }
+    // }, [inputText, outputText, inputCharCount, outputCharCount]);
 
     const handleLogout = async () => {
         var headers = new Headers();
@@ -306,18 +354,40 @@ const Main = () => {
                                 </button>
                             </div>
                             {showModal && (
-                                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-800 bg-opacity-50">
-                                    <div className="bg-white p-6 rounded shadow-md">
-                                        <h2 className="text-lg font-bold mb-4">Word and Character Counts</h2>
-                                        <p className="mb-2">Input Word Count: {inputWordCount}</p>
-                                        <p className="mb-2">Output Word Count: {outputWordCount}</p>
-                                        <p className="mb-2">Input Character Count: {inputCharCount}</p>
-                                        <p className="mb-2">Output Character Count: {outputCharCount}</p>
-                                        <p className="mb-4">Reduction Percentage: {reductionPercentage.toFixed(2)}%</p>
-                                        <button onClick={toggleModal} className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-bg">Close</button>
-                                    </div>
-                                </div>
-                            )}
+    <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-800 bg-opacity-50">
+        <div className="bg-white p-8 rounded shadow-md">
+            <div className="flex items-center mb-6">
+                <h2 className="text-2xl font-bold mr-4">Statistics</h2>
+                <FaExchangeAlt className="text-blue-500 cursor-pointer" onClick={toggleModal} />
+            </div>
+            <div className="mb-4">
+                <div className="flex justify-between mb-2">
+                    <p>Input Word Count:</p>
+                    <span className="font-bold">{inputWordCount}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                    <p>Output Word Count:</p>
+                    <span className="font-bold">{outputWordCount}</span>
+                </div>
+                {/* <div className="flex justify-between mb-2">
+                    <p>Input Character Count:</p>
+                    <span className="font-bold">{inputCharCount}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                    <p>Output Character Count:</p>
+                    <span className="font-bold">{outputCharCount}</span>
+                </div>
+                <div className="flex justify-between">
+                    <p>Reduction Percentage:</p>
+                    <span className="font-bold">  {reductionPercentage.toFixed(2)}%</span>
+                </div> */}
+            </div>
+            <button onClick={toggleModal} className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-bg">
+                Close
+            </button>
+        </div>
+    </div>
+)}
                         </>
                     )}
                 </div>
