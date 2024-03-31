@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { FaCloudUploadAlt, FaFileDownload } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaFileDownload, FaArrowRight } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ImStatsBars } from "react-icons/im";
 import { FaExchangeAlt } from 'react-icons/fa';
 
 const countWords = (text) => {
-    
+
     const words = text.split(/\s+/).filter(word => word !== '');
     return words.length;
 };
 
-
+const countCharacters = (text) => {
+    return text.length;
+};
 
 
 const Main = () => {
@@ -55,6 +57,13 @@ const Main = () => {
     };
 
     const generateSummary = async () => {
+
+        if (!inputText.trim()) {
+            toast.error('Please enter some text before generating the summary.');
+            setOutputText("")
+            return;
+        }
+
         let requestBody;
         let apiUrl;
         let headers = {};
@@ -67,14 +76,14 @@ const Main = () => {
             headers = { 'Content-Type': 'application/json' };
         } else {
             setTextProcessing(true);
-            apiUrl = 'https://api-inference.huggingface.co/models/google/pegasus-cnn_dailymail';
-            requestBody = { inputs: inputText };
+            apiUrl = 'http://127.0.0.1:6060/summarize';
+            requestBody = { text: inputText };
             headers = {
-                'Authorization': 'Bearer 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',
+                // 'Authorization': 'Bearer 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',
                 'Content-Type': 'application/json'
             };
         }
-        
+
 
         try {
             const response = await fetch(apiUrl, {
@@ -88,55 +97,59 @@ const Main = () => {
                 let summary;
 
                 if (inputType === 'ARTICLE') {
-                    // First, retrieve the content from the URL
+
                     const articleContent = result.content;
                     const ss = articleContent.join(" ");
                     setInputWordCount(countWords(ss));
-                
-                    // Next, prepare the request body for summarization using PEGASUS
-                    const summarizationRequestBody = { inputs: ss };
-                
-                    // Set the API URL and headers for the PEGASUS model
-                    apiUrl = 'https://api-inference.huggingface.co/models/google/pegasus-large';
+                    setInputCharCount(countCharacters(ss))
+
+                    const summarizationRequestBody = { text: ss };
+
+                    apiUrl = 'http://127.0.0.1:6060/summarize';
                     headers = {
-                        'Authorization': 'Bearer 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',
+                        // 'Authorization': 'Bearer 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',
                         'Content-Type': 'application/json'
                     };
-                
+
                     try {
-                        // Fetch the summary using PEGASUS model
+
                         const summaryResponse = await fetch(apiUrl, {
                             method: 'POST',
                             headers: headers,
                             body: JSON.stringify(summarizationRequestBody)
                         });
-                
+
                         if (summaryResponse.ok) {
                             const summaryResult = await summaryResponse.json();
                             console.log('Summary Result: ', summaryResult);
-                            const summary = summaryResult[0]['summary_text'].replace(/<n>/g, '');
-                
-                            // Update state with the generated summary
+                            const summary = summaryResult['summary'].replace(/<n>/g, '');
+
+
                             setOutputWordCount(countWords(summary));
+                            setOutputCharCount(countCharacters(summary));
                             setOutputText(summary);
-                            
+
                         } else {
                             console.error('Error generating summary:', summaryResponse.statusText);
                         }
                     } catch (error) {
+                        toast.error("Enter Valid Url")
                         console.error('Error generating summary:', error);
                     }
                     finally {
                         setTextProcessing(false);
                     }
-                }else {
+                } else {
                     setInputWordCount(countWords(inputText));
-                    summary = result[0]['summary_text'].replace(/<n>/g, '');
+                    setInputCharCount(countCharacters(inputText));
+                    summary = result['summary'].replace(/<n>/g, '');
                 }
                 toast.success('Summary Generated');
                 setOutputWordCount(countWords(summary));
+                setOutputCharCount(countCharacters(summary));
                 setOutputText(summary);
             } else {
+                toast.error("Enter Valid Url")
                 console.error('Error generating summary:', response.statusText);
             }
         } catch (error) {
@@ -237,13 +250,14 @@ const Main = () => {
         fetchUserData();
     }, []);
 
-    // useEffect(() => {
-    //     setInputCharCount(inputText.length);
-    //     setOutputCharCount(outputText.length);
-    //     if (inputCharCount !== 0) {
-    //         setReductionPercentage(((inputCharCount - outputCharCount) / inputCharCount) * 100);
-    //     }
-    // }, [inputText, outputText, inputCharCount, outputCharCount]);
+    useEffect(() => {
+        setInputCharCount(inputText.length);
+        setOutputCharCount(outputText.length);
+        if (inputCharCount !== 0) {
+            setReductionPercentage(((inputCharCount - outputCharCount) / inputCharCount) * 100);
+        }
+
+    }, [inputText, outputText, inputCharCount, outputCharCount]);
 
     const handleLogout = async () => {
         var headers = new Headers();
@@ -298,6 +312,8 @@ const Main = () => {
                         <div className="mb-4">
                             <label htmlFor="articleUrl" className="text-lg block">Article URL:</label>
                             <input type="text" id="articleUrl" value={inputText} onChange={(e) => setInputText(e.target.value)} className="w-full border rounded p-2 focus:border-blue-500 focus:outline-none" />
+                            <h2 className="animate__animated animate__fadeIn text-xl md:text-2xl lg:text-xl font-bold mb-4 md:mb-8">
+                                Note : Enter the URL of GEEKS FOR GEEKS AND TUTORIALS POINT articles only.</h2>
                         </div>
                     )}
 
@@ -345,49 +361,57 @@ const Main = () => {
                     ) : (
                         <>
                             <textarea id="outputText" value={outputText} className="w-full h-36 md:h-48 border rounded p-2 focus:border-blue-500 focus:outline-none resize-none"></textarea>
-                            <div className="flex justify-end mt-4">
-                                <button onClick={toggleModal} className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center">
-                                    <ImStatsBars />
-                                </button>
-                                <button onClick={downloadAsPdf} className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center">
-                                    <FaFileDownload className="md-2" />
-                                </button>
-                            </div>
+                            {(inputType === 'TEXT' &&
+                                <div className="flex justify-end mt-4">
+                                    <button onClick={toggleModal} className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center">
+                                        <ImStatsBars />
+                                    </button>
+                                    <button onClick={downloadAsPdf} className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center">
+                                        <FaFileDownload className="md-2" />
+                                    </button>
+                                </div>)}
                             {showModal && (
-    <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-800 bg-opacity-50">
-        <div className="bg-white p-8 rounded shadow-md">
-            <div className="flex items-center mb-6">
-                <h2 className="text-2xl font-bold mr-4">Statistics</h2>
-                <FaExchangeAlt className="text-blue-500 cursor-pointer" onClick={toggleModal} />
-            </div>
-            <div className="mb-4">
-                <div className="flex justify-between mb-2">
-                    <p>Input Word Count:</p>
-                    <span className="font-bold">{inputWordCount}</span>
-                </div>
-                <div className="flex justify-between mb-2">
-                    <p>Output Word Count:</p>
-                    <span className="font-bold">{outputWordCount}</span>
-                </div>
-                {/* <div className="flex justify-between mb-2">
-                    <p>Input Character Count:</p>
-                    <span className="font-bold">{inputCharCount}</span>
-                </div>
-                <div className="flex justify-between mb-2">
-                    <p>Output Character Count:</p>
-                    <span className="font-bold">{outputCharCount}</span>
-                </div>
-                <div className="flex justify-between">
-                    <p>Reduction Percentage:</p>
-                    <span className="font-bold">  {reductionPercentage.toFixed(2)}%</span>
-                </div> */}
-            </div>
-            <button onClick={toggleModal} className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-bg">
-                Close
-            </button>
-        </div>
-    </div>
-)}
+                                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-800 bg-opacity-50">
+                                    <div className="bg-white p-8 rounded shadow-md">
+                                        <div className="flex items-center mb-6">
+                                            <h2 className="text-2xl font-bold mr-4">Statistics</h2>
+                                            <FaExchangeAlt className="text-blue-500 cursor-pointer" onClick={toggleModal} />
+                                        </div>
+                                        <div className="conversion-container flex mb-4">
+                                            <div className="input-container mr-4">
+                                                <h3 className="text-lg font-semibold">Input Word Count</h3>
+                                                {inputWordCount}
+                                            </div>
+                                            <FaArrowRight className="text-3xl text-green-600" />
+                                            <div className="output-container ml-4">
+                                                <h3 className="text-lg font-semibold">Output Word Count </h3>
+                                                {outputWordCount}
+                                            </div>
+                                        </div>
+                                        <div className="conversion-container flex mb-4">
+                                            <div className="input-container mr-4">
+                                                <h3 className="text-lg font-semibold">Input Char Count</h3>
+                                                {inputCharCount}
+                                            </div>
+                                            <FaArrowRight className="text-3xl text-green-600" />
+                                            <div className="output-container ml-4">
+                                                <h3 className="text-lg font-semibold">Output Char Count</h3>
+                                                {outputCharCount}
+                                            </div>
+                                        </div>
+                                        <div className="conversion-container flex mb-4">
+                                            <div className="input-container mr-4">
+                                                <h3 className="text-lg font-semibold">Reduction Percentage</h3>
+                                                {reductionPercentage.toFixed(0) } %
+                                            </div>
+                                        </div>
+
+                                        <button onClick={toggleModal} className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-bg">
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>

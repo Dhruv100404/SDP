@@ -8,12 +8,14 @@
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.4.17",
     "axios": "^1.6.2",
+    "chart.js": "^4.4.2",
     "cloudinary": "^2.0.1",
     "cloudinary-react": "^1.8.1",
     "html2pdf.js": "^0.10.1",
     "js-cookie": "^3.0.5",
     "postcss": "^8.4.35",
     "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
     "react-router-dom": "^6.20.1",
@@ -22,6 +24,7 @@
     "source-map-loader": "^5.0.0",
     "stream-http": "^3.2.0",
     "tailwindcss-animatecss": "^3.0.5",
+    "victory": "^37.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
