@@ -79,7 +79,6 @@ const Main = () => {
             apiUrl = 'http://127.0.0.1:6060/summarize';
             requestBody = { text: inputText };
             headers = {
-                // 'Authorization': 'Bearer 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',
                 'Content-Type': 'application/json'
             };
         }
@@ -195,6 +194,7 @@ const Main = () => {
 
     const askQuestion = async () => {
         if (!processingComplete) {
+            toast.error('Please Upload PDF')
             console.error('PDF processing not complete. Please wait.');
             return;
         }
@@ -253,11 +253,11 @@ const Main = () => {
     useEffect(() => {
         setInputCharCount(inputText.length);
         setOutputCharCount(outputText.length);
-        if (inputCharCount !== 0) {
-            setReductionPercentage(((inputCharCount - outputCharCount) / inputCharCount) * 100);
+        if (inputWordCount !== 0) {
+            setReductionPercentage(((inputWordCount - outputWordCount) / inputWordCount) * 100);
         }
 
-    }, [inputText, outputText, inputCharCount, outputCharCount]);
+    }, [inputText, outputText, inputWordCount, outputWordCount]);
 
     const handleLogout = async () => {
         var headers = new Headers();
@@ -296,7 +296,7 @@ const Main = () => {
 
             <div className="content-container flex flex-col md:flex-row w-full mt-4 justify-center">
                 <div className="input-container m-4 p-6 bg-white rounded shadow-md hover:shadow-lg transition-shadow w-full md:w-1/2">
-                    <div className="mb-4 flex flex-wrap space-y-2 md:space-y-0 md:space-x-2">
+                    <div className="mb-4 flex flex-wrap space-y-0 md:space-y-0 md:space-x-4">
                         <button className={`button bg-red-500 hover:bg-blue-500 text-white py-2 px-4 rounded transition-bg`} onClick={() => setInputType('PDF')}>
                             PDF
                         </button>
