@@ -40,7 +40,7 @@ const Main = () => {
         setQuestion(e.target.value);
     };
 
-    const downloadAsPdf = () => {
+    const downloadAstxt = () => {
         const blob = new Blob([outputText], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -366,7 +366,7 @@ const Main = () => {
                                     <button onClick={toggleModal} className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center">
                                         <ImStatsBars />
                                     </button>
-                                    <button onClick={downloadAsPdf} className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center">
+                                    <button onClick={downloadAstxt} className="bg-blue-500 text-white py-2 px-4 rounded mr-2 hover:bg-blue-600 transition-bg flex items-center">
                                         <FaFileDownload className="md-2" />
                                     </button>
                                 </div>)}
